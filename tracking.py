@@ -1,34 +1,23 @@
-_cwd = dirname(abspath(__file__))
+from flask import Flask
+from flask.ext.pymongo import PyMongo
 
 SECRET_KEY = 'flask-session-insecure-secret-key'
+WTF_CSRF_SECRET_KEY = 'this-is-not-random-but-it-should-be'
+
 MONGO_URI = 'mongodb://'
 MONGO_HOST = '10.55.55.5'
 MONGO_PORT = 27017
 MONGO_AUTO_START_REQUEST = False
-MONGO_DBNAME = 'bills'
+MONGO_DBNAME = 'students'
 MONGO_USERNAME = None
 MONGO_PASSWORD = None
 MONGO_REPLICA_SET = None
-WTF_CSRF_SECRET_KEY = 'this-is-not-random-but-it-should-be'
 
 
 app = Flask(__name__)
-app.config.from_object(__name__)
 
-db = SQLAlchemy(app)
-
-# class Site(db.Model):
-#     __tablename__ = 'tracking_site'
-
-#     id = db.Column(db.Integer, primary_key=True)
-#     base_url = db.Column(db.String)
-#     visits = db.relationship('Visit', backref='tracking_site', lazy='select')
-
-#     def __repr__(self):
-#         return '<Site %r>' % (self.base_url)
-
-#     def __str__(self):
-        # return self.base_url
+# connect to MongoDB with the defaults
+mongo1 = PyMongo(app)
 
 class School:
     def __init__(self, name, num, addr, s_type):
@@ -54,5 +43,29 @@ class School:
 
 # >>> MIT.describe()
 # MIT is a university located at Cambridge.
+
+@app.route('/')
+def home_page():
+    students = mongo.db.users.find({'firstname': 'John'})
+    return render_template('index.html',
+        online_users=students)
+
+@app.route('/students/<firstname>')
+def user_profile(firstname):
+    user = mongo.db.students.find_one_or_404({'_id': firstname})
+    return render_template('student.html', student=student)
+
+# Valid object ID strings are converted into ObjectId objects
+@app.route('/<ObjectId:student_id>')
+def show_student(student_id):
+    task = mongo.db.students.find_one_or_404(student_id)
+    return render_template('student.html', student=student)
+
+
+
+if __name__ == "__main__":
+    app.debug = True
+    db.create_all()
+    app.run()
 
 
